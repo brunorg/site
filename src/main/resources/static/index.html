@@ -1,0 +1,191 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BRG Tecnologia | Bem Vindo!</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/foundation/6.2.3/foundation.min.css">
+    <style type="text/css">
+      
+      body {
+        background: #f2f1ff;
+      }
+      
+      .callout.primary {
+        color: #210b4a;
+        background-color: #6321de;
+      }
+
+      .subheader {
+        color: #e0d2f8;
+      }
+
+      .top-bar a {
+        color: #115112;
+      }
+
+      .top-bar a:hover {
+        color: #fff;
+      }
+      
+      .top-bar, .top-bar ul {
+        color: #082608;
+        background-color: #98ea9a;
+      }
+
+      code.prettyprint {
+        border-radius: 8px;
+      }
+
+      pre.prettyprint {
+        margin-top: 20px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+      }
+
+    </style>
+  </head>
+  <body>
+    
+    <!-- Start Top Bar -->
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <ul class="menu">
+          <li class="menu-text">Bruno Roberto Gonçalves</li>
+        </ul>
+      </div>
+      <div class="top-bar-right">
+        <ul class="menu">
+          <li><a href="about.html">Sobre</a></li>
+          <li><a href="index.html">Blog</a></li>
+          <li><a href="contact.html">Contato</a></li>
+        </ul>
+      </div>
+    </div>
+    <!-- End Top Bar -->
+
+    <div class="callout primary">
+      <div class="row column text-center">
+        <h2 class="subheader">Verba volant, scripta manent.</h2>
+      </div>
+    </div>
+    
+    <div class="row" id="content">
+      <div class="medium-8 columns">
+        <div class="blog-post">
+          <h3>Criando sites estáticos com Spring Boot e Docker <small>25/07/2016</small></h3>
+          <strong>
+            <p>Uma das grandes vantagens de usar o Docker é poder desenvolver aplicações em um ambiente isolado, sem "sujar" o espaço de trabalho local por causa de instalações de ferramentas de compilação, bibliotecas e frameworks.</p>
+
+            <p>Por ex: eu queria fazer um pequeno teste de um website estático no SpringBoot, mas não estava afim de instalar o Maven e nem mesmo o Java na minha máquina local para fazer esse teste. Além disso, eu queria ir modificando e testando o conteúdo editado do site rapidamente sem necessidade de redeploy, através de um editor de texto simples como o Sublime Text.</p>
+
+            <p>A seguir vou mostrar para vocês como realizar esse <em>"workflow"</em> de forma simples com o Docker e algumas pequenas configurações no arquivo <code>pom.xml</code> da aplicação SpringBoot, supondo que vocês já possuam experiência com Docker. Vamos lá?</p>
+          </strong>
+
+          <p>O primeiro passo é criar a estrutura de uma aplicação maven Web com o Spring Boot. No caso, eu usei o site <a href="https://start.spring.io">SPRING INITIALIZR</a> para criar essa estrutura.</p>
+
+          <p>Após criar a estrutura inicial, entre no diretório raiz e adicione um arquivo <code>Dockerfile</code> com o seguinte conteúdo.</p>
+
+
+          <pre class="prettyprint lang-sh">
+            
+  # Executar a partir do Maven 3 com Java 8
+  FROM maven:3-jdk-8
+
+  # Criar pasta que será usada para app
+  RUN mkdir -p /usr/src/app
+  WORKDIR /usr/src/app
+
+  # Executar o Spring Boot com modo auto-reload habilitado
+  CMD ["mvn", "-Drun.addResources=true", "spring-boot:run"]            
+          </pre>
+
+          <p>Feito isso, você pode criar uma imagem do Docker com o comando abaixo. O nome da imagem será <em><strong> demo </strong></em>: </p>
+
+          <pre class="prettyprint lang-sh">
+
+  $ docker build -t demo .
+          </pre>
+
+          Depois execute a imagem com o seguinte comando Docker, onde <code> /caminho/local/demo </code> é a pasta que contém o projeto na sua máquina local:
+
+          <pre class="prettyprint lang-sh">
+
+  $ docker run -it -p 80:8080 -v /caminho/local/demo:/usr/src/app --name demo-instance demo
+          </pre>
+
+          <p><em><small> OBS: o argumento -p 80:8080 na linha de comando redireciona as requisições da porta 8080 no contêiner para a porta 80 da máquina local. </small></em></p>
+
+          <p>Arguarde alguns bons minutos <em>&lt;troll&gt;baixando a internet com o Maven (hehehe)&lt;/troll&gt;</em> até aparecer a mensagem do Spring Boot inicializado.</p>
+
+          <p>Você agora pode acessar o <a href="http://localhost">http://localhost</a> e verificar se o site está no ar, mas como não existe nenhum página <code>index.html</code> o Spring Boot exibe uma mensagem de erro padrão.</p>
+
+          <p>Portanto, vamos criar uma pagina html de boas vindas dentro da pasta <code>src/main/resources/static</code> com o nome de <code>index.html</code>. Coloque qualquer conteúdo que quiser.</p>
+
+          <p>
+          Agora tente recarregar o site e perceba que mesmo assim a página não apareceu. Isto ocorre por que o Spring Boot ainda não foi configurado com o modo de desenvolvimento, sendo que para isso é necessário incluir a seguinte dependência no arquivo <code>pom.xml</code>.</p>
+
+          <pre class="prettyprint lang-xml">
+
+  &lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-devtools&lt;/artifactId&gt;
+    &lt;optional&gt;true&lt;/optional&gt;
+  &lt;/dependency&gt;
+          </pre>
+
+          <p>Após adicionar a dependência, reinicie o Docker. Primeiro pare o conteiner apertando <kbd>Ctrl+C</kbd> e depois execute o comando abaixo para iniciar novamente a instância do docker:</p>
+
+          <pre class="prettyprint lang-sh">
+
+  $ docker start -a -i demo-instance
+          </pre>
+
+          <p>A partir desse ponto o conteúdo HTML deverá ser exibido. Abra a página <a href="http://localhost">http://localhost</a>. Depois tente modificá-la e recarregar o navegador para ver o que acontece.</p>
+
+          <p>Você perceberá que não será mais necessário reiniciar o docker para exibir o novo conteúdo no navegador, podendo fazer modificações e testá-las <em>On The Fly</em>.</p>
+
+          <br><br><br>
+
+          <div class="callout">
+            <ul class="menu simple">
+              <li><a href="#">Author: Bruno Roberto Gonçalves</a></li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+      <div class="medium-3 columns" data-sticky-container>
+        <div class="sticky" data-sticky data-anchor="content">
+          <h4>Categorias</h4>
+          <ul>
+            <li><a href="#">Docker</a></li>
+          </ul>
+
+          <h4>Autores</h4>
+          <ul>
+            <li><a href="#">Bruno</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    
+    <div class="row column">
+      <ul class="pagination" role="navigation" aria-label="Pagination">
+        <li class="disabled">Previous</li>
+        <li class="current"><span class="show-for-sr">You're on page</span> 1</li>
+        <li class="disabled">Next</li>
+      </ul>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/foundation/6.2.3/foundation.min.js"></script>
+    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js?skin=desert"></script>
+    <script>
+      $(document).foundation();
+    </script>
+  </body>
+</html>
+
+
+
